@@ -37,7 +37,7 @@ type loader struct {
 
 func (l *loader) Watch(_ context.Context, cfg config.Config) error {
 	fn := filepath.Join("conf", cfg.Key()+".toml")
-	l.w.Remove(fn)
+	_ = l.w.Remove(fn)
 	if err := l.w.Add(fn); err != nil {
 		return err
 	}
