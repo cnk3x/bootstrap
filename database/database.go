@@ -46,9 +46,9 @@ type DB struct {
 
 func (d *DB) Init(ctx context.Context) error {
 	d.log.Debugf("数据库初始化")
-	//return d.cfg.Watch(ctx, d)
-	d.dsn = "root:root@tcp(127.0.0.1:3306)/example"
-	return nil
+	return d.cfg.Watch(ctx, d)
+	//d.dsn = "root:root@tcp(127.0.0.1:3306)/example"
+	//return nil
 }
 
 func (d *DB) Key() string {

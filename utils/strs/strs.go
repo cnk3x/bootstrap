@@ -2,10 +2,11 @@ package strs
 
 import (
 	"bytes"
-	"encoding/json"
 	"reflect"
 	"strconv"
 	"unsafe"
+
+	"go.shu.run/bootstrap/utils/json"
 )
 
 type V []byte

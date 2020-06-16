@@ -13,7 +13,7 @@ It has these top-level messages:
 */
 package protoexample
 
-import proto "github.com/golang/protobuf/proto"
+import proto "google.golang.org/protobuf/proto"
 import math "math"
 
 // Reference imports to suppress errors if they are not otherwise used.

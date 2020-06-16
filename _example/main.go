@@ -20,7 +20,6 @@ func main() {
 				return nil
 			},
 		})
-
 	})
 	bootstrap.Run()
 }

@@ -15,7 +15,7 @@ func Run() {
 	log := rus.Provide()
 	log.Infof("启动...")
 
-	client, err := configProvide([]string{"http://127.0.0.1:2379"}, "root", "root")
+	client, err := configProvide([]string{"http://127.0.0.1:12379"}, "root", "root")
 	if err != nil {
 		log.Fatalf("%v", client)
 	}

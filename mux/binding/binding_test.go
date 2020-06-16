@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"go.shu.run/bootstrap/mux/testdata/protoexample"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -19,8 +18,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
+	"go.shu.run/bootstrap/mux/testdata/protoexample"
+
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
 )
 
 type appkey struct {

@@ -3,8 +3,9 @@ package redis
 import (
 	"context"
 
-	"github.com/go-redis/redis/v8"
 	"go.shu.run/bootstrap/logger"
+
+	"github.com/go-redis/redis/v8"
 	"go.uber.org/fx"
 )
 
