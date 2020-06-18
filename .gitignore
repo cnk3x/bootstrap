@@ -15,3 +15,5 @@
 vendor/
 .idea/
 scripts/config_init.cmd
+
+go.sum

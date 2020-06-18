@@ -1,12 +1,16 @@
 package logger
 
-var Nil null
+var Nil Logger = null{}
 
 type null struct {
 }
 
 func (n null) Prefix(string) Logger {
-	return null{}
+	return n
+}
+
+func (n null) Logf(string, string, ...interface{}) {
+
 }
 
 func (n null) Debugf(string, ...interface{}) {

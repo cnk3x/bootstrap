@@ -16,8 +16,6 @@ func Provide(constructors ...interface{}) {
 
 func Invoke(constructors ...interface{}) {
 	Add(fx.Invoke(constructors...))
-	fx.Supply()
-	fx.Populate()
 }
 
 func Supply(values ...interface{}) {

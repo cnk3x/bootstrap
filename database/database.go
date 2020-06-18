@@ -4,97 +4,40 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+
 	"go.shu.run/bootstrap/logger"
+
 	"gorm.io/driver/mysql"
-	"sync"
-	"time"
-
-	"go.shu.run/bootstrap/config"
-	"go.shu.run/bootstrap/utils/strs"
-
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 )
-
-const keyRoot = "/sys/database"
-const keyDebug = keyRoot + "/debug"
-const keyDSN = keyRoot + "/dsn"
 
 var ErrNotOpen = errors.New("database not open")
 
 var defaultConfig = &gorm.Config{NamingStrategy: schema.NamingStrategy{SingularTable: true}, PrepareStmt: true}
 
-func New(cfg config.Loader, log logger.Logger) *DB {
-	db := &DB{cfg: cfg, log: log.Prefix("DB")}
-	db.Init(context.Background())
-	return db
+func New(cfg Config, log logger.Logger) (*DB, error) {
+	log = log.Prefix("DB")
+	log.Debugf("dsn: %s", cfg)
+	gdb, err := gorm.Open(mysql.Open(cfg.String()), defaultConfig)
+	if err != nil {
+		return nil, err
+	}
+	gdb.Logger = &l{Logger: log}
+	return &DB{
+		log:   log.Prefix("DB"),
+		gdb:   gdb,
+		debug: cfg.Debug,
+	}, err
 }
 
 type DB struct {
-	cfg config.Loader
-	log logger.Logger
-
-	dsnBu string
-	dsn   string
+	log   logger.Logger
+	gdb   *gorm.DB
 	debug bool
-	sync  bool
-
-	gdb *gorm.DB
-
-	sync.Mutex
-}
-
-func (d *DB) Init(ctx context.Context) error {
-	d.log.Debugf("数据库初始化")
-	return d.cfg.Watch(ctx, d)
-	//d.dsn = "root:root@tcp(127.0.0.1:3306)/example"
-	//return nil
-}
-
-func (d *DB) Key() string {
-	return keyRoot
-}
-
-func (d *DB) OnUpdate(key string, val string) {
-	d.log.Debugf("key: %s, val: %s", key, val)
-	switch key {
-	case keyDebug:
-		d.debug = strs.V(val).Bool(d.debug)
-	case keyDSN:
-		d.Lock()
-		defer d.Unlock()
-		d.dsnBu = d.dsn
-		d.dsn = strs.V(val).String()
-	}
 }
 
 func (d *DB) GetDB(ctx context.Context) *gorm.DB {
-	d.log.Debugf("try open database: ...%s", d.dsn)
-
-	d.Lock()
-	for {
-		gdb, err := gorm.Open(mysql.Open(d.dsn), defaultConfig)
-		if err != nil {
-			d.log.Errorf("try open database: %v", err)
-			select {
-			case <-ctx.Done():
-				d.log.Errorf("try open database: %v", ctx.Err())
-				return nil
-			case <-time.After(time.Second * 3):
-				continue
-			}
-		}
-
-		gdb.Logger = &l{d.log}
-		d.gdb = gdb
-		d.log.Debugf("database is opened")
-
-		err = d.Ping(ctx)
-		d.log.Debugf("database ping: %v", err)
-		break
-	}
-	d.Unlock()
-
 	if d.debug {
 		return d.gdb.Debug().WithContext(ctx)
 	}

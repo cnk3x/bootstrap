@@ -74,7 +74,7 @@ func newService(service interface{}) *Service {
 }
 
 func (mux *Mux) HandleService(service interface{}) {
-	mux.Log().Infof("注册服务: %s", reflect.Indirect(reflect.ValueOf(service)).Type().Name())
+	mux.Infof("注册服务: %s", reflect.Indirect(reflect.ValueOf(service)).Type().Name())
 	newService(service).Apply(mux)
 }
 

@@ -8,12 +8,10 @@ import (
 	"net/url"
 	"reflect"
 	"strconv"
-	"sync"
 	"time"
 
 	"go.shu.run/bootstrap/logger"
 	"go.shu.run/bootstrap/mux/binding"
-	"go.shu.run/bootstrap/mux/formbind"
 )
 
 const (
@@ -26,14 +24,19 @@ const (
 var _ context.Context = (*C)(nil)
 
 type C struct {
-	*http.Request
-	Values map[string]interface{} //中间件值载体
-
-	Log logger.Logger
 	mux *Mux
-	sync.Mutex
+	log logger.Logger
+
+	values      map[string]interface{} //中间件值载体
+	respHeaders http.Header            //输出的http头
+
+	*http.Request
+
+	sameSite http.SameSite
+	cookies  []*http.Cookie
 }
 
+//impl context
 func (c *C) Deadline() (deadline time.Time, ok bool) {
 	return c.Request.Context().Deadline()
 }
@@ -50,32 +53,36 @@ func (c *C) Value(key interface{}) interface{} {
 	return c.Request.Context().Value(key)
 }
 
-func (c *C) release() {
+func (c *C) reset() {
 	c.Request = nil
-	if len(c.Values) > 0 {
-		for key := range c.Values {
-			delete(c.Values, key)
+	if len(c.values) > 0 {
+		for key := range c.values {
+			delete(c.values, key)
 		}
 	}
+
+	for n := range c.respHeaders {
+		c.respHeaders.Del(n)
+	}
+}
+
+func (c *C) release() {
+	c.reset()
 	c.mux.cPool.Put(c)
 }
 
 func (c *C) Set(name string, value interface{}) {
-	c.Lock()
-	defer c.Unlock()
-	if c.Values == nil {
-		c.Values = make(map[string]interface{}, 1)
-	}
-	c.Values[name] = value
+	c.values[name] = value
 }
 
 func (c *C) Get(name string) interface{} {
-	if len(c.Values) > 0 {
-		return c.Values[name]
+	if len(c.values) > 0 {
+		return c.values[name]
 	}
 	return nil
 }
 
+// input
 func (c *C) Param(name string) string {
 	v, ok := c.Get(pathParamKey + name).(string)
 	if !ok {
@@ -87,16 +94,6 @@ func (c *C) Param(name string) string {
 func (c *C) ParamInt(name string) int64 {
 	v, _ := strconv.ParseInt(c.Param(name), 10, 64)
 	return v
-}
-
-func (c *C) HeaderGet(names ...string) string {
-	for _, name := range names {
-		s := c.Request.Header.Get(name)
-		if s != "" {
-			return s
-		}
-	}
-	return ""
 }
 
 func (c *C) FormValue(names ...string) string {
@@ -173,12 +170,69 @@ func (c *C) Bind(i interface{}) error {
 	return binder.Bind(c.Request, i)
 }
 
-func (c *C) BindForm(i interface{}) error {
-	return formbind.Bind(c.GetForm(), i)
+//func (c *C) BindForm(i interface{}) error {
+//	return formbind.Bind(c.GetForm(), i)
+//}
+
+//header
+func (c *C) HeaderGet(names ...string) string {
+	for _, name := range names {
+		s := c.Request.Header.Get(name)
+		if s != "" {
+			return s
+		}
+	}
+	return ""
 }
 
+func (c *C) GetCookie(name string) string {
+	cookie, err := c.Request.Cookie(name)
+	if err != nil {
+		return ""
+	}
+	val, _ := url.QueryUnescape(cookie.Value)
+	return val
+}
+
+// output
+
+// header
+func (c *C) HeaderSet(name, value string) {
+	c.respHeaders.Set(name, value)
+}
+
+func (c *C) HeaderAdd(name, value string) {
+	c.respHeaders.Add(name, value)
+}
+
+// SetSameSite with cookie
+func (c *C) SetSameSite(sameSite http.SameSite) {
+	c.sameSite = sameSite
+}
+
+// SetCookie adds a Set-Cookie header to the ResponseWriter's headers.
+// The provided cookie must have a valid Name.
+// Invalid cookies may be silently dropped.
+func (c *C) SetCookie(name, value string, maxAge int, path, domain string, secure, httpOnly bool) {
+	if path == "" {
+		path = "/"
+	}
+
+	c.cookies = append(c.cookies, &http.Cookie{
+		Name:     name,
+		Value:    url.QueryEscape(value),
+		MaxAge:   maxAge,
+		Path:     path,
+		Domain:   domain,
+		SameSite: c.sameSite,
+		Secure:   secure,
+		HttpOnly: httpOnly,
+	})
+}
+
+//response
 func (c *C) Blob(code int, contentType string, data []byte) R {
-	c.Log.Infof("status: %d -> %s -> %s", code, contentType, string(data))
+	c.log.Infof("status: %d -> %s -> %s", code, contentType, string(data))
 	return RFunc(func(c *C, w http.ResponseWriter) {
 		w.Header().Set("Content-Type", contentType)
 		w.WriteHeader(code)
@@ -204,7 +258,7 @@ func (c *C) PrettyJSON(data interface{}, indent string) R {
 }
 
 func (c *C) JSON(data interface{}) R {
-	v, err := json.Marshal(map[string]interface{}{"code": 200, "msg": "OK", "data": data})
+	v, err := json.Marshal(data)
 	if err != nil {
 		return c.Error(500, err)
 	}

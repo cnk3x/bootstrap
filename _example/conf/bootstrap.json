@@ -1,0 +1,20 @@
+{
+  "log": {
+    "caller": true
+  },
+  "redis": {
+    "addr": "127.0.0.1:6379",
+    "password": "feng",
+    "db": 1
+  },
+  "sql": {
+    "server": "127.0.0.1:3306",
+    "user": "root",
+    "password": "root",
+    "database": "example",
+    "extra": "?charset=utf8&parseTime=True&loc=Local"
+  },
+  "mux": {
+    "listen_at": "127.0.0.1:1234"
+  }
+}

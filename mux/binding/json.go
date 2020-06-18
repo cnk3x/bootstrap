@@ -6,10 +6,11 @@ package binding
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+
+	"go.shu.run/bootstrap/utils/json"
 )
 
 // EnableDecoderUseNumber is used to call the UseNumber method on the JSON

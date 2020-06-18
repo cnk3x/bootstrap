@@ -11,6 +11,6 @@ func init() {
 
 func Api(router *mux.Mux) {
 	router.GET("/", func(c *mux.C) mux.R {
-		return c.JSON(mux.H{"msg": "OK"})
+		return mux.H{"msg": "OK"}
 	})
 }
