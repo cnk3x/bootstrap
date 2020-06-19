@@ -2,6 +2,7 @@ package database
 
 import "fmt"
 
+//Config database config
 type Config struct {
 	Server   string `json:"server" toml:"server" yaml:"server"`
 	User     string `json:"user" toml:"user" yaml:"user"`
@@ -12,5 +13,10 @@ type Config struct {
 }
 
 func (cfg Config) String() string {
+	return cfg.Dsn()
+}
+
+//Dsn Dsn
+func (cfg Config) Dsn() string {
 	return fmt.Sprintf("%s:%s@tcp(%s)/%s%s", cfg.User, cfg.Password, cfg.Server, cfg.Database, cfg.Extra)
 }

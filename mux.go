@@ -2,19 +2,27 @@ package bootstrap
 
 import (
 	"context"
+	"net"
+	"net/http"
+
+	"go.shu.run/bootstrap/dig"
 	"go.shu.run/bootstrap/logger"
 	"go.shu.run/bootstrap/mux"
 	"go.uber.org/fx"
-	"net"
-	"net/http"
 )
 
+//MuxConfig .
 type MuxConfig struct {
 	ListenAt string `json:"listen_at"`
 }
 
-func StartMux(mux *mux.Mux, log logger.Logger, cfg MuxConfig, fc fx.Lifecycle) {
-	ms := &MuxServer{
+//AddHTTPServer StartMux
+func AddHTTPServer() {
+	dig.Invoke(startHTTPServer)
+}
+
+func startHTTPServer(mux *mux.Mux, log logger.Logger, cfg MuxConfig, fc fx.Lifecycle) {
+	ms := &muxServer{
 		log:     log.Prefix("Mux"),
 		cfg:     cfg,
 		handler: mux,
@@ -25,20 +33,20 @@ func StartMux(mux *mux.Mux, log logger.Logger, cfg MuxConfig, fc fx.Lifecycle) {
 	})
 }
 
-type MuxServer struct {
-	fx.In
+//muxServer muxServer
+type muxServer struct {
 	log     logger.Logger
 	cfg     MuxConfig
 	handler *mux.Mux
 	server  *http.Server
 }
 
-func (m *MuxServer) OnStart(ctx context.Context) error {
+//OnStart OnStart
+func (m *muxServer) OnStart(ctx context.Context) error {
 	m.server = &http.Server{
 		Addr:    m.cfg.ListenAt,
 		Handler: m.handler,
 		BaseContext: func(ln net.Listener) context.Context {
-			m.log.Debugf("connect: %s", ln.Addr().String())
 			return ctx
 		},
 	}
@@ -49,6 +57,7 @@ func (m *MuxServer) OnStart(ctx context.Context) error {
 	return nil
 }
 
-func (m *MuxServer) OnStop(ctx context.Context) error {
+//OnStop OnStop
+func (m *muxServer) OnStop(ctx context.Context) error {
 	return m.server.Shutdown(ctx)
 }

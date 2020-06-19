@@ -8,6 +8,7 @@ import (
 	"go.shu.run/bootstrap/utils/namec"
 )
 
+//Service http server service
 type Service struct {
 	name         string
 	initHandlers []func(*Mux)
@@ -16,6 +17,7 @@ type Service struct {
 	handlerMap   map[string]HandlerFunc
 }
 
+//Apply Apply
 func (srv *Service) Apply(mux *Mux) {
 	router := mux
 	if srv.name != "" {
@@ -73,6 +75,7 @@ func newService(service interface{}) *Service {
 	return srv
 }
 
+//HandleService HandleService
 func (mux *Mux) HandleService(service interface{}) {
 	mux.Infof("注册服务: %s", reflect.Indirect(reflect.ValueOf(service)).Type().Name())
 	newService(service).Apply(mux)

@@ -9,6 +9,7 @@ import (
 	"go.shu.run/bootstrap/logger"
 )
 
+//New 一个路由
 func New() *Mux {
 	mux := &Mux{log: logger.Nil}
 	mux.cPool.New = func() interface{} {
@@ -23,10 +24,13 @@ func New() *Mux {
 	return mux
 }
 
+//HandlerFunc 路由方法
 type HandlerFunc func(c *C) R
 
+//MiddlewareFunc 中间件方法
 type MiddlewareFunc func(next HandlerFunc) HandlerFunc
 
+//Mux 一个路由
 type Mux struct {
 	log logger.Logger
 
@@ -42,10 +46,12 @@ type Mux struct {
 	cPool sync.Pool
 }
 
+//SetLogger SetLogger
 func (mux *Mux) SetLogger(l logger.Logger) {
 	mux.getRoot().log = l
 }
 
+//Group Group
 func (mux *Mux) Group(prefix string) *Mux {
 	return &Mux{
 		root:       mux.getRoot(),
@@ -54,23 +60,28 @@ func (mux *Mux) Group(prefix string) *Mux {
 	}
 }
 
+//Use Use
 func (mux *Mux) Use(middleware ...MiddlewareFunc) {
 	mux.middleware = append(mux.middleware, middleware...)
 }
 
+//GET GET
 func (mux *Mux) GET(path string, handle HandlerFunc, middleware ...MiddlewareFunc) {
 	mux.Handle(http.MethodGet, path, handle, middleware...)
 }
 
+//POST POST
 func (mux *Mux) POST(path string, handle HandlerFunc, middleware ...MiddlewareFunc) {
 	mux.Handle(http.MethodPost, path, handle, middleware...)
 }
 
+//GetPost GetPost
 func (mux *Mux) GetPost(path string, handle HandlerFunc, middleware ...MiddlewareFunc) {
 	mux.GET(path, handle, middleware...)
 	mux.POST(path, handle, middleware...)
 }
 
+//Handle Handle
 func (mux *Mux) Handle(method, path string, handle HandlerFunc, middleware ...MiddlewareFunc) {
 	root := mux.getRoot()
 	path = CleanPath(mux.prefix + path)
@@ -89,6 +100,7 @@ func (mux *Mux) Handle(method, path string, handle HandlerFunc, middleware ...Mi
 	mMap.addRoute(path, mux.applyMw(handle, append(middleware, mux.middleware...)...))
 }
 
+//Reset Reset
 func (mux *Mux) Reset() {
 	router := mux.getRoot()
 	if len(router.middleware) > 0 {
@@ -217,14 +229,17 @@ func (mux *Mux) handleOrigin(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Access-Control-Max-Age", "86400")
 }
 
+//Debugf Debugf
 func (mux *Mux) Debugf(format string, args ...interface{}) {
 	mux.getRoot().log.Logf("d", format, args...)
 }
 
+//Infof Infof
 func (mux *Mux) Infof(format string, args ...interface{}) {
 	mux.getRoot().log.Logf("i", format, args...)
 }
 
+//Errorf Errorf
 func (mux *Mux) Errorf(format string, args ...interface{}) {
 	mux.getRoot().log.Logf("e", format, args...)
 }

@@ -9,16 +9,12 @@ import (
 	"go.uber.org/fx"
 )
 
+//Run Run the bootstrap
 func Run() {
 	log := rus.New(rus.ConfigDefault)
 	log.Infof("启动...")
 
-	//if err := supplyConfig(); err != nil {
-	//	log.Fatalf("%v", err)
-	//}
-
 	dig.Add(fx.Logger(log.Prefix("Fx")))
-	dig.Provide(supplyConfig, rus.New)
-	dig.Provide(database.New, mux.New)
+	dig.Provide(supplyConfig, rus.New, database.New, mux.New)
 	dig.Run()
 }

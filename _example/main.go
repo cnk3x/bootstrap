@@ -6,6 +6,9 @@ import (
 )
 
 func main() {
-	dig.Invoke(bootstrap.StartMux)
+	bootstrap.AddHTTPServer()
+
+	dig.Invoke(api)
+
 	bootstrap.Run()
 }

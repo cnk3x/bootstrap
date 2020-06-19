@@ -25,5 +25,6 @@
     "format": true,
     "diagnostics": true,
     "documentLink": false
-  }
+  },
+  "go.inferGopath": false
 }

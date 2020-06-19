@@ -16,16 +16,18 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+//Config Config
 type Config struct {
 	fx.Out
-	Log   rus.Config      `json:"log" toml:"log" yaml:"log"`
-	Redis redis.Config    `json:"redis" toml:"redis" yaml:"redis"`
-	Sql   database.Config `json:"sql" toml:"sql" yaml:"sql"`
-	Mux   MuxConfig       `json:"mux" toml:"mux" yaml:"mux"`
+	Log      rus.Config      `json:"log" toml:"log" yaml:"log"`
+	Redis    redis.Config    `json:"redis" toml:"redis" yaml:"redis"`
+	Database database.Config `json:"sql" toml:"sql" yaml:"sql"`
+	Mux      MuxConfig       `json:"mux" toml:"mux" yaml:"mux"`
 
 	Type string `json:"-" toml:"-" yaml:"-"`
 }
 
+//Update Update
 func (cfg *Config) Update(v []byte) error {
 	switch cfg.Type {
 	case "yaml", "yml":
